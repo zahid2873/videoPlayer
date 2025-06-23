@@ -33,7 +33,7 @@ class FloderWidget extends StatelessWidget {
             child: Row(
               children: [
                 SvgPicture.asset(
-                  "assets/images/phoneImg.svg",
+                  "assets/images/folder.svg",
                   height: 80,
                   width: 80,
                 ),
