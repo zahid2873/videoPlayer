@@ -2,11 +2,10 @@ import 'dart:io';
 
 import 'package:file_manager/file_manager.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:video_player_app/screens/home/fileManagement/floder_widget.dart';
 import 'package:video_player_app/screens/home/video/video_preview.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:video_player_app/utils.dart/utils.dart';
 
 class HomeTab extends StatelessWidget {
   HomeTab({super.key});
@@ -22,7 +21,7 @@ class HomeTab extends StatelessWidget {
           controller: controller,
           builder: (context, snapshot) {
             return FutureBuilder<List<FileSystemEntity>>(
-              future: _filterVideoFilesAndDeleteOthers(snapshot),
+              future: _filterVideoFiles(snapshot),
               builder: (context, filteredSnapshot) {
                 if (!filteredSnapshot.hasData) {
                   return Center(child: CircularProgressIndicator());
@@ -38,7 +37,7 @@ class HomeTab extends StatelessWidget {
                       final file = File(entity.path);
 
                       return FutureBuilder<File?>(
-                        future: _generateThumbnail(file),
+                        future: Utils.generateThumbnail(file),
                         builder: (context, snapshot) {
                           final thumbnail = snapshot.data;
 
@@ -49,6 +48,7 @@ class HomeTab extends StatelessWidget {
                               showFileExtension: true,
                             ),
                             entity: entity,
+                            entityList: filtered,
                             thumbnailImageFile: thumbnail,
                           );
                         },
@@ -280,7 +280,7 @@ class HomeTab extends StatelessWidget {
     return false;
   }
 
-  Future<List<FileSystemEntity>> _filterVideoFilesAndDeleteOthers(
+  Future<List<FileSystemEntity>> _filterVideoFiles(
     List<FileSystemEntity> entities,
   ) async {
     const videoExtensions = [
@@ -310,23 +310,42 @@ class HomeTab extends StatelessWidget {
     return result;
   }
 
-  Future<File?> _generateThumbnail(File videoFile) async {
-    try {
-      final tempDir = await getTemporaryDirectory();
+  Future<List<File>> extractVideoFilesOnly(
+    List<FileSystemEntity> entities,
+  ) async {
+    const videoExtensions = [
+      '.mp4',
+      '.mkv',
+      '.avi',
+      '.mov',
+      '.flv',
+      '.wmv',
+      '.webm',
+    ];
 
-      final thumbnailPath = await VideoThumbnail.thumbnailFile(
-        video: videoFile.path,
-        thumbnailPath:
-            '${tempDir.path}/thumb_${DateTime.now().millisecondsSinceEpoch}.png',
-        imageFormat: ImageFormat.PNG,
-        maxWidth: 128,
-        quality: 75,
-      );
-
-      return thumbnailPath != null ? File(thumbnailPath) : null;
-    } catch (e) {
-      debugPrint('Thumbnail generation error: $e');
-      return null;
-    }
+    return entities.whereType<File>().where((file) {
+      final path = file.path.toLowerCase();
+      return videoExtensions.any((ext) => path.endsWith(ext));
+    }).toList();
   }
+
+  // Future<File?> _generateThumbnail(File videoFile) async {
+  //   try {
+  //     final tempDir = await getTemporaryDirectory();
+
+  //     final thumbnailPath = await VideoThumbnail.thumbnailFile(
+  //       video: videoFile.path,
+  //       thumbnailPath:
+  //           '${tempDir.path}/thumb_${DateTime.now().millisecondsSinceEpoch}.png',
+  //       imageFormat: ImageFormat.PNG,
+  //       maxWidth: 128,
+  //       quality: 75,
+  //     );
+
+  //     return thumbnailPath != null ? File(thumbnailPath) : null;
+  //   } catch (e) {
+  //     debugPrint('Thumbnail generation error: $e');
+  //     return null;
+  //   }
+  // }
 }
