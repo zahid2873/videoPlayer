@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:file_manager/file_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:video_player/screens/home/floder_widget.dart';
+import 'package:video_player_app/screens/home/fileManagement/floder_widget.dart';
+import 'package:video_player_app/screens/home/video/video_preview.dart';
+import 'package:video_player_app/utils.dart/utils.dart';
 
 class HomeTab extends StatelessWidget {
   HomeTab({super.key});
@@ -19,7 +21,7 @@ class HomeTab extends StatelessWidget {
           controller: controller,
           builder: (context, snapshot) {
             return FutureBuilder<List<FileSystemEntity>>(
-              future: _filterVideoFilesAndDeleteOthers(snapshot),
+              future: _filterVideoFiles(snapshot),
               builder: (context, filteredSnapshot) {
                 if (!filteredSnapshot.hasData) {
                   return Center(child: CircularProgressIndicator());
@@ -30,74 +32,43 @@ class HomeTab extends StatelessWidget {
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     FileSystemEntity entity = filtered[index];
-                    return FileManager.isFile(entity)
-                        ? Card(
-                            child: ListTile(
-                              leading: FileManager.isFile(entity)
-                                  ? Icon(Icons.feed_outlined)
-                                  : Icon(Icons.folder),
-                              title: Text(
-                                FileManager.basename(
-                                  entity,
-                                  showFileExtension: true,
-                                ),
-                              ),
-                              subtitle: subtitle(entity),
-                              onTap: () async {
-                                if (FileManager.isDirectory(entity)) {
-                                  // open the folder
-                                  WidgetsBinding.instance.addPostFrameCallback((
-                                    _,
-                                  ) {
-                                    controller.openDirectory(entity);
-                                  });
 
-                                  // delete a folder
-                                  // await entity.delete(recursive: true);
+                    if (FileManager.isFile(entity)) {
+                      final file = File(entity.path);
 
-                                  // rename a folder
-                                  // await entity.rename("newPath");
+                      return FutureBuilder<File?>(
+                        future: Utils.generateThumbnail(file),
+                        builder: (context, snapshot) {
+                          final thumbnail = snapshot.data;
 
-                                  // Check weather folder exists
-                                  // entity.exists();
-
-                                  // get date of file
-                                  // DateTime date = (await entity.stat()).modified;
-                                } else {
-                                  // delete a file
-                                  // await entity.delete();
-
-                                  // rename a file
-                                  // await entity.rename("newPath");
-
-                                  // Check weather file exists
-                                  // entity.exists();
-
-                                  // get date of file
-                                  // DateTime date = (await entity.stat()).modified;
-
-                                  // get the size of the file
-                                  // int size = (await entity.stat()).size;
-                                }
-                              },
-                            ),
-                          )
-                        : FloderWidget(
+                          return VideoPreview(
+                            videoFile: file,
                             title: FileManager.basename(
                               entity,
                               showFileExtension: true,
                             ),
                             entity: entity,
-                            onTap: () {
-                              if (FileManager.isDirectory(entity)) {
-                                WidgetsBinding.instance.addPostFrameCallback((
-                                  _,
-                                ) {
-                                  controller.openDirectory(entity);
-                                });
-                              } else {}
-                            },
+                            entityList: filtered,
+                            thumbnailImageFile: thumbnail,
                           );
+                        },
+                      );
+                    } else {
+                      return FloderWidget(
+                        title: FileManager.basename(
+                          entity,
+                          showFileExtension: true,
+                        ),
+                        entity: entity,
+                        onTap: () {
+                          if (FileManager.isDirectory(entity)) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              controller.openDirectory(entity);
+                            });
+                          }
+                        },
+                      );
+                    }
                   },
                 );
               },
@@ -309,7 +280,7 @@ class HomeTab extends StatelessWidget {
     return false;
   }
 
-  Future<List<FileSystemEntity>> _filterVideoFilesAndDeleteOthers(
+  Future<List<FileSystemEntity>> _filterVideoFiles(
     List<FileSystemEntity> entities,
   ) async {
     const videoExtensions = [
@@ -338,4 +309,43 @@ class HomeTab extends StatelessWidget {
     }
     return result;
   }
+
+  Future<List<File>> extractVideoFilesOnly(
+    List<FileSystemEntity> entities,
+  ) async {
+    const videoExtensions = [
+      '.mp4',
+      '.mkv',
+      '.avi',
+      '.mov',
+      '.flv',
+      '.wmv',
+      '.webm',
+    ];
+
+    return entities.whereType<File>().where((file) {
+      final path = file.path.toLowerCase();
+      return videoExtensions.any((ext) => path.endsWith(ext));
+    }).toList();
+  }
+
+  // Future<File?> _generateThumbnail(File videoFile) async {
+  //   try {
+  //     final tempDir = await getTemporaryDirectory();
+
+  //     final thumbnailPath = await VideoThumbnail.thumbnailFile(
+  //       video: videoFile.path,
+  //       thumbnailPath:
+  //           '${tempDir.path}/thumb_${DateTime.now().millisecondsSinceEpoch}.png',
+  //       imageFormat: ImageFormat.PNG,
+  //       maxWidth: 128,
+  //       quality: 75,
+  //     );
+
+  //     return thumbnailPath != null ? File(thumbnailPath) : null;
+  //   } catch (e) {
+  //     debugPrint('Thumbnail generation error: $e');
+  //     return null;
+  //   }
+  // }
 }

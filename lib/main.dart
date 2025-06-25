@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/screens/home/home_tab.dart';
+import 'package:video_player_app/screens/home/home_tab.dart';
 
 void main() {
   runApp(const MyApp());
@@ -21,8 +21,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-
 
 // class HomePage extends StatelessWidget {
 //   final FileManagerController controller = FileManagerController();
