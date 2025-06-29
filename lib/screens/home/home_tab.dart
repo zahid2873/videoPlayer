@@ -3,20 +3,39 @@ import 'dart:io';
 import 'package:file_manager/file_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:video_player_app/common/custom_appbar.dart';
 import 'package:video_player_app/screens/home/fileManagement/floder_widget.dart';
 import 'package:video_player_app/screens/home/video/video_preview.dart';
 import 'package:video_player_app/utils.dart/utils.dart';
 
-class HomeTab extends StatelessWidget {
+class HomeTab extends StatefulWidget {
   HomeTab({super.key});
+
+  @override
+  State<HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<HomeTab> {
   final FileManagerController controller = FileManagerController();
+  @override
+  void initState() {
+    super.initState();
+    _permission();
+  }
+
+  _permission() async {
+    await Permission.storage.request();
+    await Permission.manageExternalStorage.request();
+  }
+
+ 
 
   @override
   Widget build(BuildContext context) {
     return ControlBackButton(
       controller: controller,
       child: Scaffold(
-        appBar: appBar(context),
+        appBar: customAppBar(context),
         body: FileManager(
           controller: controller,
           builder: (context, snapshot) {
@@ -27,49 +46,76 @@ class HomeTab extends StatelessWidget {
                   return Center(child: CircularProgressIndicator());
                 }
                 final filtered = filteredSnapshot.data!;
-                return ListView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: 2, vertical: 0),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    FileSystemEntity entity = filtered[index];
-
-                    if (FileManager.isFile(entity)) {
-                      final file = File(entity.path);
-
-                      return FutureBuilder<File?>(
-                        future: Utils.generateThumbnail(file),
-                        builder: (context, snapshot) {
-                          final thumbnail = snapshot.data;
-
-                          return VideoPreview(
-                            videoFile: file,
-                            title: FileManager.basename(
-                              entity,
-                              showFileExtension: true,
-                            ),
-                            entity: entity,
-                            entityList: filtered,
-                            thumbnailImageFile: thumbnail,
-                          );
-                        },
-                      );
-                    } else {
-                      return FloderWidget(
-                        title: FileManager.basename(
-                          entity,
-                          showFileExtension: true,
+                return SingleChildScrollView(
+                  physics: BouncingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                        child: Text(
+                          controller.getCurrentPath,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          maxLines: 1,
                         ),
-                        entity: entity,
-                        onTap: () {
-                          if (FileManager.isDirectory(entity)) {
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              controller.openDirectory(entity);
-                            });
+                      ),
+                      ListView.builder(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 2,
+                          vertical: 0,
+                        ),
+                        itemCount: filtered.length,
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemBuilder: (context, index) {
+                          FileSystemEntity entity = filtered[index];
+
+                          if (FileManager.isFile(entity)) {
+                            final file = File(entity.path);
+
+                            return FutureBuilder<File?>(
+                              future: Utils.generateThumbnail(file),
+                              builder: (context, snapshot) {
+                                final thumbnail = snapshot.data;
+
+                                return VideoPreview(
+                                  videoFile: file,
+                                  title: FileManager.basename(
+                                    entity,
+                                    showFileExtension: true,
+                                  ),
+                                  entity: entity,
+                                  entityList: filtered,
+                                  thumbnailImageFile: thumbnail,
+                                );
+                              },
+                            );
+                          } else {
+                            return FloderWidget(
+                              title: FileManager.basename(
+                                entity,
+                                showFileExtension: true,
+                              ),
+                              entity: entity,
+                              onTap: () {
+                                if (FileManager.isDirectory(entity)) {
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    controller.openDirectory(entity);
+                                  });
+                                }
+                              },
+                            );
                           }
                         },
-                      );
-                    }
-                  },
+                      ),
+                    ],
+                  ),
                 );
               },
             );
@@ -77,11 +123,26 @@ class HomeTab extends StatelessWidget {
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
-            await Permission.storage.request();
-            await Permission.manageExternalStorage.request();
+            // await Permission.storage.request();
+            // await Permission.manageExternalStorage.request();
+                        FileManager.requestFilesAccessPermission();
+
           },
           label: Text("Request File Access Permission"),
         ),
+      ),
+    );
+  }
+
+  CustomAppBar customAppBar(BuildContext context) {
+    return CustomAppBar(
+      leading: ValueListenableBuilder<String>(
+        valueListenable: controller.titleNotifier,
+        builder: (context, title, _) {
+          debugPrint(title);
+
+          return title == "0" ? SizedBox.shrink() : BackButton();
+        },
       ),
     );
   }
@@ -328,24 +389,4 @@ class HomeTab extends StatelessWidget {
       return videoExtensions.any((ext) => path.endsWith(ext));
     }).toList();
   }
-
-  // Future<File?> _generateThumbnail(File videoFile) async {
-  //   try {
-  //     final tempDir = await getTemporaryDirectory();
-
-  //     final thumbnailPath = await VideoThumbnail.thumbnailFile(
-  //       video: videoFile.path,
-  //       thumbnailPath:
-  //           '${tempDir.path}/thumb_${DateTime.now().millisecondsSinceEpoch}.png',
-  //       imageFormat: ImageFormat.PNG,
-  //       maxWidth: 128,
-  //       quality: 75,
-  //     );
-
-  //     return thumbnailPath != null ? File(thumbnailPath) : null;
-  //   } catch (e) {
-  //     debugPrint('Thumbnail generation error: $e');
-  //     return null;
-  //   }
-  // }
 }

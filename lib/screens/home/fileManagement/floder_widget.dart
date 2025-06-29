@@ -38,10 +38,15 @@ class FloderWidget extends StatelessWidget {
                   width: 80,
                 ),
                 const SizedBox(width: 15),
-                Text(
-                  title ?? "",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Text(
+                    title ?? "",
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.fade,
+                    maxLines: 1,
+                  ),
                 ),
+                Icon(Icons.chevron_right, size: 25),
               ],
             ),
           ),

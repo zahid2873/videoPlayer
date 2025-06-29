@@ -1,4 +1,3 @@
-
 import 'dart:io';
 
 import 'package:file_manager/file_manager.dart';
@@ -12,6 +11,8 @@ class VideoPreview extends StatelessWidget {
   final String? title;
   final FileSystemEntity entity;
   final List<FileSystemEntity>? entityList;
+  final bool isDetailsPage;
+  final VoidCallback? ontap;
 
   const VideoPreview({
     super.key,
@@ -20,6 +21,8 @@ class VideoPreview extends StatelessWidget {
     this.entityList,
     required this.entity,
     this.title,
+    this.ontap,
+    this.isDetailsPage = false,
   });
 
   @override
@@ -30,16 +33,18 @@ class VideoPreview extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => VideoDetails(
-                herotag: thumbnailImageFile?.path ?? "",
-                title: title,
-                videoFile: videoFile,
-                entityList: entityList??[],
-              ),
-            ),
-          ),
+          onTap: isDetailsPage
+              ? null
+              : () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => VideoDetails(
+                      herotag: thumbnailImageFile?.path ?? "",
+                      title: title,
+                      videoFile: videoFile,
+                      entityList: entityList ?? [],
+                    ),
+                  ),
+                ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(

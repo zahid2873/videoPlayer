@@ -28,35 +28,50 @@ class VideoDetails extends StatefulWidget {
 class _VideoDetailsState extends State<VideoDetails> {
   late VideoPlayerController _videoPalyerController;
   ChewieController? _chewieController;
+  File? playingFile;
+  bool isSamePlace = false;
+  double aspectRatio = 16 / 9;
 
   @override
   void initState() {
     super.initState();
-    initializePlayer();
+    initializePlayer(widget.videoFile ?? File(""));
   }
 
-  Future<void> initializePlayer() async {
-    _videoPalyerController = VideoPlayerController.file(
-      widget.videoFile ?? File(""),
-    );
-    await _videoPalyerController.initialize();
+  Future<void> initializePlayer(File file) async {
+    playingFile = file;
+    if (!await file.exists()) {
+      debugPrint("Video file doesn't exist: ${file.path}");
+      return;
+    }
+
+    try {
+      _videoPalyerController = VideoPlayerController.file(file);
+      await _videoPalyerController.initialize();
+    } catch (e) {
+      debugPrint("Video initialization error: $e");
+      return;
+    }
+
+    _chewieController?.dispose(); // Dispose old controller if switching
 
     _chewieController = ChewieController(
       videoPlayerController: _videoPalyerController,
       autoInitialize: true,
       autoPlay: true,
+      //  aspectRatio: aspectRatio, // landscape 2.5 and small screen .56
       looping: true,
       pauseOnBackgroundTap: true,
       placeholder: Container(
         color: Colors.grey,
         child: Center(child: CircularProgressIndicator()),
       ),
-      materialSeekButtonSize: 20,
+      materialSeekButtonSize: 25,
       materialProgressColors: ChewieProgressColors(
         playedColor: Colors.red,
         handleColor: Colors.red,
-        backgroundColor: Colors.grey,
-        bufferedColor: Colors.lightGreen,
+        backgroundColor: Colors.white,
+        bufferedColor: Colors.grey,
       ),
 
       errorBuilder: (context, errorMessage) {
@@ -118,22 +133,33 @@ class _VideoDetailsState extends State<VideoDetails> {
   }
 
   Widget _buildCheiwePlayer(BuildContext context) {
+    bool isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
+    //  WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   if (!isPortrait) {
+    //     aspectRatio = 2.15;
+    //   } else {
+    //     aspectRatio = 16 / 9;
+    //   }
+    //   setState(() {});
+    // });
+    debugPrint(isPortrait.toString());
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child:
           _chewieController != null &&
               _chewieController!.videoPlayerController.value.isInitialized
           ? AspectRatio(
-              aspectRatio: _videoPalyerController.value.aspectRatio,
+              aspectRatio: isPortrait
+                  ? 16 / 9
+                  : 2.15, // _videoPalyerController.value.aspectRatio,
               child: Chewie(controller: _chewieController!),
             )
           : const Center(child: CircularProgressIndicator()),
     );
   }
 
-  Future<List<File>> _extractVideoFilesOnly(
-    List<FileSystemEntity> entities,
-  ) async {
+  List<File> _extractVideoFilesOnly(List<FileSystemEntity> entities) {
     const videoExtensions = [
       '.mp4',
       '.mkv',
@@ -151,18 +177,41 @@ class _VideoDetailsState extends State<VideoDetails> {
   }
 
   Widget _buildVideoList(BuildContext context) {
+    final videoFiles = _extractVideoFilesOnly(widget.entityList);
     return Column(
-      children: widget.entityList.map((videoFile) {
+      children: videoFiles.map((videoFile) {
         return FutureBuilder<File?>(
           future: Utils.generateThumbnail(File(videoFile.path)),
           builder: (context, thumbnailSnapshot) {
             final thumbnail = thumbnailSnapshot.data;
-            return VideoPreview(
-              videoFile: File(videoFile.path),
-              title: FileManager.basename(videoFile, showFileExtension: true),
-              entity: videoFile,
-              entityList: widget.entityList,
-              thumbnailImageFile: thumbnail,
+            return GestureDetector(
+              onTap: () {
+                if (playingFile != null &&
+                    playingFile!.path != videoFile.path) {
+                  initializePlayer(File(videoFile.path));
+                }
+              },
+              child: Container(
+                margin: const EdgeInsets.all(8),
+                decoration:
+                    playingFile != null && playingFile!.path == videoFile.path
+                    ? BoxDecoration(
+                        border: Border.all(color: Colors.red, width: 1),
+                        borderRadius: BorderRadius.circular(12),
+                      )
+                    : null,
+                child: VideoPreview(
+                  videoFile: File(videoFile.path),
+                  title: FileManager.basename(
+                    videoFile,
+                    showFileExtension: true,
+                  ),
+                  entity: videoFile,
+                  entityList: widget.entityList,
+                  thumbnailImageFile: thumbnail,
+                  isDetailsPage: true,
+                ),
+              ),
             );
           },
         );
