@@ -26,9 +26,11 @@ class _HomeTabState extends State<HomeTab> {
   _permission() async {
     await Permission.storage.request();
     await Permission.manageExternalStorage.request();
+    await Permission.storage.request(); // for Android < 13
+    await Permission.videos.request(); // for Android 13+
+    await Permission.manageExternalStorage
+        .request(); // optionally for full access
   }
-
- 
 
   @override
   Widget build(BuildContext context) {
@@ -125,8 +127,7 @@ class _HomeTabState extends State<HomeTab> {
           onPressed: () async {
             // await Permission.storage.request();
             // await Permission.manageExternalStorage.request();
-                        FileManager.requestFilesAccessPermission();
-
+            FileManager.requestFilesAccessPermission();
           },
           label: Text("Request File Access Permission"),
         ),
@@ -341,6 +342,35 @@ class _HomeTabState extends State<HomeTab> {
     return false;
   }
 
+  // Future<List<FileSystemEntity>> _filterVideoFiles(
+  //   List<FileSystemEntity> entities,
+  // ) async {
+  //   const videoExtensions = [
+  //     '.mp4',
+  //     '.mkv',
+  //     '.avi',
+  //     '.mov',
+  //     '.flv',
+  //     '.wmv',
+  //     '.webm',
+  //   ];
+  //   List<FileSystemEntity> result = [];
+
+  //   for (var entity in entities) {
+  //     if (entity is File) {
+  //       final ext = entity.path.toLowerCase();
+  //       if (videoExtensions.any((videoExt) => ext.endsWith(videoExt))) {
+  //         result.add(entity);
+  //       }
+  //     } else if (entity is Directory) {
+  //       final hasVideo = await _folderHasVideoFile(entity);
+  //       if (hasVideo) {
+  //         result.add(entity);
+  //       }
+  //     }
+  //   }
+  //   return result;
+  // }
   Future<List<FileSystemEntity>> _filterVideoFiles(
     List<FileSystemEntity> entities,
   ) async {
@@ -353,6 +383,7 @@ class _HomeTabState extends State<HomeTab> {
       '.wmv',
       '.webm',
     ];
+
     List<FileSystemEntity> result = [];
 
     for (var entity in entities) {
@@ -362,12 +393,28 @@ class _HomeTabState extends State<HomeTab> {
           result.add(entity);
         }
       } else if (entity is Directory) {
-        final hasVideo = await _folderHasVideoFile(entity);
-        if (hasVideo) {
-          result.add(entity);
+        // Skip known protected folders like Android or system folders
+        final segments = entity.path.split('/');
+        if (segments.contains('Android') ||
+            segments.contains('obb') ||
+            segments.contains('data')) {
+          debugPrint("Skipping protected/system folder: ${entity.path}");
+          continue;
+        }
+
+        try {
+          final hasVideo = await _folderHasVideoFile(entity);
+          if (hasVideo) {
+            result.add(entity);
+          }
+        } on FileSystemException catch (e) {
+          debugPrint("Skipped inaccessible folder: ${entity.path}, $e");
+        } catch (e) {
+          debugPrint("Unknown error reading folder: ${entity.path}, $e");
         }
       }
     }
+
     return result;
   }
 

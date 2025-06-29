@@ -40,26 +40,26 @@ class _VideoDetailsState extends State<VideoDetails> {
 
   Future<void> initializePlayer(File file) async {
     playingFile = file;
-    if (!await file.exists()) {
-      debugPrint("Video file doesn't exist: ${file.path}");
-      return;
-    }
+    // if (!await file.exists()) {
+    //   debugPrint("Video file doesn't exist: ${file.path}");
+    //   return;
+    // }
 
-    try {
-      _videoPalyerController = VideoPlayerController.file(file);
-      await _videoPalyerController.initialize();
-    } catch (e) {
-      debugPrint("Video initialization error: $e");
-      return;
-    }
+    // try {
+    _videoPalyerController = VideoPlayerController.file(file);
+    await _videoPalyerController.initialize();
+    // } catch (e) {
+    //   debugPrint("Video initialization error: $e");
+    //   return;
+    // }
 
-    _chewieController?.dispose(); // Dispose old controller if switching
+    // _chewieController?.dispose(); // Dispose old controller if switching
 
     _chewieController = ChewieController(
       videoPlayerController: _videoPalyerController,
       autoInitialize: true,
       autoPlay: true,
-      //  aspectRatio: aspectRatio, // landscape 2.5 and small screen .56
+      aspectRatio: 2.15, // landscape 2.5 and small screen .56
       looping: true,
       pauseOnBackgroundTap: true,
       placeholder: Container(
@@ -70,8 +70,8 @@ class _VideoDetailsState extends State<VideoDetails> {
       materialProgressColors: ChewieProgressColors(
         playedColor: Colors.red,
         handleColor: Colors.red,
-        backgroundColor: Colors.white,
-        bufferedColor: Colors.grey,
+        backgroundColor: Colors.grey,
+        bufferedColor: Colors.white,
       ),
 
       errorBuilder: (context, errorMessage) {
@@ -124,7 +124,7 @@ class _VideoDetailsState extends State<VideoDetails> {
 
   HeroWidget _buildHeroWidget(BuildContext context) {
     return HeroWidget(
-      heroTag: widget.herotag ?? "",
+      heroTag: "details: ${widget.herotag}",
       width: MediaQuery.of(context).size.width,
       heroBuilder: (BuildContext context) {
         return _buildCheiwePlayer(context);
@@ -135,14 +135,6 @@ class _VideoDetailsState extends State<VideoDetails> {
   Widget _buildCheiwePlayer(BuildContext context) {
     bool isPortrait =
         MediaQuery.of(context).orientation == Orientation.portrait;
-    //  WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   if (!isPortrait) {
-    //     aspectRatio = 2.15;
-    //   } else {
-    //     aspectRatio = 16 / 9;
-    //   }
-    //   setState(() {});
-    // });
     debugPrint(isPortrait.toString());
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -150,9 +142,7 @@ class _VideoDetailsState extends State<VideoDetails> {
           _chewieController != null &&
               _chewieController!.videoPlayerController.value.isInitialized
           ? AspectRatio(
-              aspectRatio: isPortrait
-                  ? 16 / 9
-                  : 2.15, // _videoPalyerController.value.aspectRatio,
+              aspectRatio: 2.15, // _videoPalyerController.value.aspectRatio,
               child: Chewie(controller: _chewieController!),
             )
           : const Center(child: CircularProgressIndicator()),
