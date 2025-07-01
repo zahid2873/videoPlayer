@@ -4,6 +4,7 @@ import 'package:chewie/chewie.dart';
 import 'package:file_manager/file_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:video_player_app/common/custom_appbar.dart';
 import 'package:video_player_app/screens/home/video/video_preview.dart';
 import 'package:video_player_app/utils.dart/utils.dart';
 import 'package:video_player_app/widgets/hero_widget.dart';
@@ -28,35 +29,37 @@ class VideoDetails extends StatefulWidget {
 class _VideoDetailsState extends State<VideoDetails> {
   late VideoPlayerController _videoPalyerController;
   ChewieController? _chewieController;
+  File? playingFile;
+  bool isSamePlace = false;
+  double aspectRatio = 16 / 9;
 
   @override
   void initState() {
     super.initState();
-    initializePlayer();
+    initializePlayer(widget.videoFile ?? File(""));
   }
 
-  Future<void> initializePlayer() async {
-    _videoPalyerController = VideoPlayerController.file(
-      widget.videoFile ?? File(""),
-    );
+  Future<void> initializePlayer(File file) async {
+    playingFile = file;
+    _videoPalyerController = VideoPlayerController.file(file);
     await _videoPalyerController.initialize();
-
     _chewieController = ChewieController(
       videoPlayerController: _videoPalyerController,
       autoInitialize: true,
       autoPlay: true,
+      aspectRatio: 2.15, // landscape 2.5 and small screen .56
       looping: true,
       pauseOnBackgroundTap: true,
       placeholder: Container(
         color: Colors.grey,
         child: Center(child: CircularProgressIndicator()),
       ),
-      materialSeekButtonSize: 20,
+      materialSeekButtonSize: 25,
       materialProgressColors: ChewieProgressColors(
         playedColor: Colors.red,
         handleColor: Colors.red,
         backgroundColor: Colors.grey,
-        bufferedColor: Colors.lightGreen,
+        bufferedColor: Colors.white,
       ),
 
       errorBuilder: (context, errorMessage) {
@@ -82,7 +85,17 @@ class _VideoDetailsState extends State<VideoDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(leading: BackButton()),
+      appBar: CustomAppBar(
+        title: Image.asset(
+          "assets/images/logo.png",
+          height: 60,
+          width: 120,
+          fit: BoxFit.cover,
+        ),
+        isCenterTitle: true,
+        leading: BackButton(),
+      ),
+
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,7 +122,7 @@ class _VideoDetailsState extends State<VideoDetails> {
 
   HeroWidget _buildHeroWidget(BuildContext context) {
     return HeroWidget(
-      heroTag: widget.herotag ?? "",
+      heroTag: "details: ${widget.herotag}",
       width: MediaQuery.of(context).size.width,
       heroBuilder: (BuildContext context) {
         return _buildCheiwePlayer(context);
@@ -118,22 +131,23 @@ class _VideoDetailsState extends State<VideoDetails> {
   }
 
   Widget _buildCheiwePlayer(BuildContext context) {
+    bool isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
+    debugPrint(isPortrait.toString());
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.only(bottom: 8),
       child:
           _chewieController != null &&
               _chewieController!.videoPlayerController.value.isInitialized
           ? AspectRatio(
-              aspectRatio: _videoPalyerController.value.aspectRatio,
+              aspectRatio: 2.15, // _videoPalyerController.value.aspectRatio,
               child: Chewie(controller: _chewieController!),
             )
           : const Center(child: CircularProgressIndicator()),
     );
   }
 
-  Future<List<File>> _extractVideoFilesOnly(
-    List<FileSystemEntity> entities,
-  ) async {
+  List<File> _extractVideoFilesOnly(List<FileSystemEntity> entities) {
     const videoExtensions = [
       '.mp4',
       '.mkv',
@@ -151,18 +165,41 @@ class _VideoDetailsState extends State<VideoDetails> {
   }
 
   Widget _buildVideoList(BuildContext context) {
+    final videoFiles = _extractVideoFilesOnly(widget.entityList);
     return Column(
-      children: widget.entityList.map((videoFile) {
+      children: videoFiles.map((videoFile) {
         return FutureBuilder<File?>(
           future: Utils.generateThumbnail(File(videoFile.path)),
           builder: (context, thumbnailSnapshot) {
             final thumbnail = thumbnailSnapshot.data;
-            return VideoPreview(
-              videoFile: File(videoFile.path),
-              title: FileManager.basename(videoFile, showFileExtension: true),
-              entity: videoFile,
-              entityList: widget.entityList,
-              thumbnailImageFile: thumbnail,
+            return GestureDetector(
+              onTap: () {
+                if (playingFile != null &&
+                    playingFile!.path != videoFile.path) {
+                  initializePlayer(File(videoFile.path));
+                }
+              },
+              child: Container(
+                margin: const EdgeInsets.all(8),
+                decoration:
+                    playingFile != null && playingFile!.path == videoFile.path
+                    ? BoxDecoration(
+                        border: Border.all(color: Colors.red, width: 1),
+                        borderRadius: BorderRadius.circular(12),
+                      )
+                    : null,
+                child: VideoPreview(
+                  videoFile: File(videoFile.path),
+                  title: FileManager.basename(
+                    videoFile,
+                    showFileExtension: true,
+                  ),
+                  entity: videoFile,
+                  entityList: widget.entityList,
+                  thumbnailImageFile: thumbnail,
+                  isDetailsPage: true,
+                ),
+              ),
             );
           },
         );

@@ -5,8 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:video_thumbnail/video_thumbnail.dart';
 
 class Utils {
-  
- static Future<File?> generateThumbnail(File videoFile) async {
+  static Future<File?> generateThumbnail(File videoFile) async {
     try {
       final tempDir = await getTemporaryDirectory();
 
