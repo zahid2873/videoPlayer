@@ -123,25 +123,23 @@ class _HomeTabState extends State<HomeTab> {
             );
           },
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () async {
-            // await Permission.storage.request();
-            // await Permission.manageExternalStorage.request();
-            FileManager.requestFilesAccessPermission();
-          },
-          label: Text("Request File Access Permission"),
-        ),
       ),
     );
   }
 
   CustomAppBar customAppBar(BuildContext context) {
     return CustomAppBar(
+      title: Image.asset(
+        "assets/images/logo.png",
+        height: 60,
+        width: 120,
+        fit: BoxFit.cover,
+      ),
+      isCenterTitle: true,
       leading: ValueListenableBuilder<String>(
         valueListenable: controller.titleNotifier,
         builder: (context, title, _) {
           debugPrint(title);
-
           return title == "0" ? SizedBox.shrink() : BackButton();
         },
       ),
@@ -342,35 +340,6 @@ class _HomeTabState extends State<HomeTab> {
     return false;
   }
 
-  // Future<List<FileSystemEntity>> _filterVideoFiles(
-  //   List<FileSystemEntity> entities,
-  // ) async {
-  //   const videoExtensions = [
-  //     '.mp4',
-  //     '.mkv',
-  //     '.avi',
-  //     '.mov',
-  //     '.flv',
-  //     '.wmv',
-  //     '.webm',
-  //   ];
-  //   List<FileSystemEntity> result = [];
-
-  //   for (var entity in entities) {
-  //     if (entity is File) {
-  //       final ext = entity.path.toLowerCase();
-  //       if (videoExtensions.any((videoExt) => ext.endsWith(videoExt))) {
-  //         result.add(entity);
-  //       }
-  //     } else if (entity is Directory) {
-  //       final hasVideo = await _folderHasVideoFile(entity);
-  //       if (hasVideo) {
-  //         result.add(entity);
-  //       }
-  //     }
-  //   }
-  //   return result;
-  // }
   Future<List<FileSystemEntity>> _filterVideoFiles(
     List<FileSystemEntity> entities,
   ) async {

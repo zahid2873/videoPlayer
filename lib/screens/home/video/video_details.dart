@@ -4,6 +4,7 @@ import 'package:chewie/chewie.dart';
 import 'package:file_manager/file_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:video_player_app/common/custom_appbar.dart';
 import 'package:video_player_app/screens/home/video/video_preview.dart';
 import 'package:video_player_app/utils.dart/utils.dart';
 import 'package:video_player_app/widgets/hero_widget.dart';
@@ -40,21 +41,8 @@ class _VideoDetailsState extends State<VideoDetails> {
 
   Future<void> initializePlayer(File file) async {
     playingFile = file;
-    // if (!await file.exists()) {
-    //   debugPrint("Video file doesn't exist: ${file.path}");
-    //   return;
-    // }
-
-    // try {
     _videoPalyerController = VideoPlayerController.file(file);
     await _videoPalyerController.initialize();
-    // } catch (e) {
-    //   debugPrint("Video initialization error: $e");
-    //   return;
-    // }
-
-    // _chewieController?.dispose(); // Dispose old controller if switching
-
     _chewieController = ChewieController(
       videoPlayerController: _videoPalyerController,
       autoInitialize: true,
@@ -97,7 +85,17 @@ class _VideoDetailsState extends State<VideoDetails> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(leading: BackButton()),
+      appBar: CustomAppBar(
+        title: Image.asset(
+          "assets/images/logo.png",
+          height: 60,
+          width: 120,
+          fit: BoxFit.cover,
+        ),
+        isCenterTitle: true,
+        leading: BackButton(),
+      ),
+
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,7 +135,7 @@ class _VideoDetailsState extends State<VideoDetails> {
         MediaQuery.of(context).orientation == Orientation.portrait;
     debugPrint(isPortrait.toString());
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.only(bottom: 8),
       child:
           _chewieController != null &&
               _chewieController!.videoPlayerController.value.isInitialized

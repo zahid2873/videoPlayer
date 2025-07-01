@@ -28,7 +28,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       scrolledUnderElevation: 2,
       iconTheme: Theme.of(context).iconTheme,
-      backgroundColor: Colors.blueAccent,
+      backgroundColor: Colors.blue[100],
       surfaceTintColor: Colors.transparent,
       centerTitle: isCenterTitle,
       actions: [
@@ -38,12 +38,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-
 class CustomBackButton extends StatelessWidget {
-  const CustomBackButton({
-    super.key,
-    this.color,
-  });
+  const CustomBackButton({super.key, this.color});
   final Color? color;
   @override
   Widget build(BuildContext context) {
@@ -55,7 +51,7 @@ class CustomBackButton extends StatelessWidget {
           color: color ?? Theme.of(context).iconTheme.color,
         ),
         onPressed: () {
-       Navigator.of(context).pop();
+          Navigator.of(context).pop();
         },
       ),
     );
