@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:video_player_app/utils.dart/utils.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   const CustomAppBar({
@@ -28,7 +29,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       scrolledUnderElevation: 2,
       iconTheme: Theme.of(context).iconTheme,
-      backgroundColor: Colors.blue[100],
+      backgroundColor: Utils.colorWithOpacity(Color(0xFFB1FFC5), 0.5),
       surfaceTintColor: Colors.transparent,
       centerTitle: isCenterTitle,
       actions: [
@@ -46,6 +47,8 @@ class CustomBackButton extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
       child: IconButton(
+        padding: const EdgeInsets.all(0),
+        splashRadius: 1,
         icon: Icon(
           Icons.arrow_back,
           color: color ?? Theme.of(context).iconTheme.color,
