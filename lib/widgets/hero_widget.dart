@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 typedef HeroBuilder = Widget Function(BuildContext context);
 
 class HeroWidget extends StatelessWidget {
-  HeroWidget({
+  const HeroWidget({
     Key? key,
     required this.heroBuilder,
     required this.heroTag,
@@ -16,7 +16,6 @@ class HeroWidget extends StatelessWidget {
   final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) {
-//    debugPrint("aaaaaa $he")
     return SizedBox(
       width: width,
       child: Hero(
